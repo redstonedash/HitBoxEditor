@@ -40,6 +40,8 @@ public class HitBoxEditor : EditorWindow
     Vector3 scaleField = new Vector3(1, 1, 1);
     Vector3 offsetField = new Vector3();
     Vector3 rotationField = new Vector3();
+    int time = 0;
+    int maxTime = 1;
 
 
 
@@ -83,6 +85,7 @@ public class HitBoxEditor : EditorWindow
             }
             json += "]}";
             File.WriteAllText(pathField, json);
+            Debug.Log("hitbox exported");
         }
         if (GUILayout.Button("Import JSON"))
         {
@@ -92,7 +95,33 @@ public class HitBoxEditor : EditorWindow
             {
                 CreateHitbox(hbox.name,new Vector3(hbox.launchVector[0], hbox.launchVector[1], hbox.launchVector[2]),hbox.beginFrame,hbox.duration,hbox.damage, hbox.hitStun, new Vector3(hbox.scale[0], hbox.scale[1], hbox.scale[2]), new Vector3(hbox.offset[0], hbox.offset[1], hbox.offset[2]), new Vector3(hbox.rotation[0], hbox.rotation[1], hbox.rotation[2]));
             }
+            Debug.Log("hitbox imported");
 
+        }
+        if (GUILayout.Button("Update max time"))
+        {
+            maxTime = getMaxTime();
+        }
+        var tempTIme = time;
+        time = EditorGUILayout.IntSlider(time,0,maxTime);
+        if (tempTIme != time)
+        {
+
+            FindObjectsOfTypeAll();
+            var hboxArray = FindObjectsOfTypeAL<HBox>();
+            foreach (var hbox in hboxArray)
+            {
+                if (hbox.beginFrame <= time && time - hbox.beginFrame < hbox.duration)
+                {
+                    Debug.Log("enabled");
+                    hbox.gameObject.SetActive(true);
+                }
+                else
+                {
+                    Debug.Log("disabled");
+                    hbox.gameObject.SetActive(false);
+                }
+            }
         }
     }
 
@@ -108,5 +137,15 @@ public class HitBoxEditor : EditorWindow
         instance.transform.localScale = scale;
         instance.transform.position = offset;
         instance.transform.eulerAngles = rotation;
+    }
+    int getMaxTime()
+    {
+        var hboxArray = FindObjectsOfType<HBox>();
+        int maxTime = 0;
+        foreach (var hbox in hboxArray)
+        {
+            maxTime = (hbox.beginFrame + hbox.duration > maxTime) ? (hbox.beginFrame + hbox.duration) : (maxTime);
+        }
+        return maxTime;
     }
 }
