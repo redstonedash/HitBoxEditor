@@ -27,23 +27,35 @@ public class Hitbox
     public float[] offset { get; set; }
 }
 
-
 public class HitBoxEditor : EditorWindow
 {
     string nameField = "HBox";
+    private Vector3 launchVectorField;
+    private int beginFrameField;
+    private int durationField;
+    private float damageField;
+    private float hitStunField;
+    private Vector3 scaleField = new Vector3(1,1,1);
+    private Vector3 offsetField;
+    private Vector3 rotationField;
     string pathField = @"C:\";
-    int beginFrameField = 0;
-    int durationField = 0;
-    float damageField = 0;
-    float hitStunField = 0;
-    Vector3 launchVectorField = new Vector3();
-    Vector3 scaleField = new Vector3(1, 1, 1);
-    Vector3 offsetField = new Vector3();
-    Vector3 rotationField = new Vector3();
+    [SerializeField]
+    Transform charecterField;
     int time = 0;
-    int maxTime = 1;
+    int maxTimeField = 1;
+    bool playMode = false;
 
-
+    public void Update()
+    {
+        if (playMode) { 
+            time++;
+            if (time > maxTimeField)
+            {
+                time = 0;
+            }
+            UpdateHitboxesToTime();
+        }
+    }
 
     // Add menu item named "My Window" to the Window menu
     [MenuItem("Window/HitBoxEditor")]
@@ -73,7 +85,7 @@ public class HitBoxEditor : EditorWindow
         pathField = EditorGUILayout.TextField("Path Field", pathField);
         if (GUILayout.Button("Export JSON"))
         {
-            var hboxArray = FindObjectsOfType<HBox>();
+            var hboxArray = Resources.FindObjectsOfTypeAll(typeof(HBox));
             string json = "{\"hitboxes\":[";
             foreach (var hbox in hboxArray)
             {
@@ -93,38 +105,50 @@ public class HitBoxEditor : EditorWindow
             Rootobject root = JsonConvert.DeserializeObject<Rootobject>(json);
             foreach(var hbox in root.hitboxes)
             {
-                CreateHitbox(hbox.name,new Vector3(hbox.launchVector[0], hbox.launchVector[1], hbox.launchVector[2]),hbox.beginFrame,hbox.duration,hbox.damage, hbox.hitStun, new Vector3(hbox.scale[0], hbox.scale[1], hbox.scale[2]), new Vector3(hbox.offset[0], hbox.offset[1], hbox.offset[2]), new Vector3(hbox.rotation[0], hbox.rotation[1], hbox.rotation[2]));
+                CreateHitbox(hbox.name,
+                    new Vector3( hbox.launchVector[0], hbox.launchVector[1], hbox.launchVector[2]),
+                    hbox.beginFrame,
+                    hbox.duration,
+                    hbox.damage, 
+                    hbox.hitStun, 
+                    new Vector3(hbox.scale[0], hbox.scale[1], hbox.scale[2]), 
+                    new Vector3(hbox.offset[0], hbox.offset[1], hbox.offset[2]), 
+                    new Vector3(hbox.rotation[0], hbox.rotation[1], hbox.rotation[2]));
             }
             Debug.Log("hitbox imported");
 
         }
-        if (GUILayout.Button("Update max time"))
-        {
-            maxTime = getMaxTime();
-        }
+        maxTimeField = EditorGUILayout.IntField(maxTimeField);
         var tempTIme = time;
-        time = EditorGUILayout.IntSlider(time,0,maxTime);
+        time = EditorGUILayout.IntSlider(time,0,maxTimeField);
         if (tempTIme != time)
         {
-
-            FindObjectsOfTypeAll();
-            var hboxArray = FindObjectsOfTypeAL<HBox>();
-            foreach (var hbox in hboxArray)
+            UpdateHitboxesToTime();
+        }
+        playMode = EditorGUILayout.Toggle(playMode);
+        charecterField = (Transform) EditorGUILayout.ObjectField(charecterField, typeof(Transform), true);
+        
+    }
+    void UpdateHitboxesToTime()
+    {
+        var hboxArray = Resources.FindObjectsOfTypeAll(typeof(HBox));
+        foreach (HBox hbox in hboxArray)
+        {
+            if (hbox.GetComponent<HBox>().beginFrame <= time && time - hbox.GetComponent<HBox>().beginFrame <= hbox.GetComponent<HBox>().duration)
             {
-                if (hbox.beginFrame <= time && time - hbox.beginFrame < hbox.duration)
-                {
-                    Debug.Log("enabled");
-                    hbox.gameObject.SetActive(true);
-                }
-                else
-                {
-                    Debug.Log("disabled");
-                    hbox.gameObject.SetActive(false);
-                }
+                Debug.Log("enabled");
+                hbox.gameObject.SetActive(true);
+            }
+            else
+            {
+                Debug.Log("disabled");
+                hbox.gameObject.SetActive(false);
             }
         }
+        if (charecterField != null) {
+            charecterField.GetComponent<animateInEditor>().SetAnimPercent((float)time/ (float)maxTimeField);
+        }
     }
-
     void CreateHitbox(String name, Vector3 launchVector, int beginFrame, int duration, float damage, float hitstun, Vector3 scale, Vector3 offset, Vector3 rotation)
     {
         GameObject instance = Instantiate(Resources.Load("HBox", typeof(GameObject))) as GameObject;
@@ -138,7 +162,7 @@ public class HitBoxEditor : EditorWindow
         instance.transform.position = offset;
         instance.transform.eulerAngles = rotation;
     }
-    int getMaxTime()
+    /*int getMaxTime()
     {
         var hboxArray = FindObjectsOfType<HBox>();
         int maxTime = 0;
@@ -147,5 +171,6 @@ public class HitBoxEditor : EditorWindow
             maxTime = (hbox.beginFrame + hbox.duration > maxTime) ? (hbox.beginFrame + hbox.duration) : (maxTime);
         }
         return maxTime;
-    }
+    }*/
+
 }
