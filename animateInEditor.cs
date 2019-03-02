@@ -16,7 +16,7 @@ public class animateInEditor : MonoBehaviour {
 	
 	// Update is called once per frame
 	public void SetAnimPercent (float moment) {
-        a.Play("crossPunch", 0,moment);
+        a.Play("uppercut", 0,moment);
         a.Update(0);
         print(moment);
     }
